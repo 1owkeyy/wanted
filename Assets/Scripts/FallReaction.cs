@@ -10,7 +10,8 @@ public class FallReaction : MonoBehaviour
     [SerializeField] private float fallDuration = 0.35f;
     [SerializeField] private AnimationCurve fallCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     [SerializeField] private float holdBeforeDeactivate = 0.4f;
-    [SerializeField] private bool deactivateAfterFall = true; // false for the player, since the level shouldn't disappear
+    [SerializeField] private bool deactivateAfterFall = true;
+    [SerializeField] private bool disableCollidersOnFall = true; // true for enemies, false for player // false for the player, since the level shouldn't disappear
 
     // sourceTransform = whoever fired the shot, used to determine fall direction (away from source).
     public void PlayFall(Transform sourceTransform, System.Action onComplete)
@@ -26,8 +27,11 @@ public class FallReaction : MonoBehaviour
     private IEnumerator FallRoutine(Transform sourceTransform, System.Action onComplete)
     {
         // Disable all colliders immediately so the fallen enemy doesn't block movement or re-trigger duels
-        foreach (var col in GetComponentsInChildren<Collider>())
-            col.enabled = false;
+        if (disableCollidersOnFall)
+        {
+            foreach (var col in GetComponentsInChildren<Collider>())
+                col.enabled = false;
+        }
 
         Vector3 awayFromSource = (transform.position - sourceTransform.position);
         awayFromSource.y = 0f;

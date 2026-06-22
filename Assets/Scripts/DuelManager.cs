@@ -30,6 +30,7 @@ public class DuelManager : MonoBehaviour
     [SerializeField] private FallReaction playerFallReaction;
     [SerializeField] private ScreenFlash screenFlash;
     [SerializeField] private Transform playerTransform;
+    [SerializeField] private Rigidbody playerRigidbody; // assign PlayerPivot's Rigidbody
 
     [Header("Retry UI")]
     [SerializeField] private GameObject retryPromptUI;
@@ -107,6 +108,16 @@ public class DuelManager : MonoBehaviour
     {
         CurrentState = DuelState.Aiming;
         SetTimeScale(duelTimeScale);
+
+        // Snap player to face the first enemy so the arc's center (0 degrees) starts
+        // pointing directly at them — makes the clamp symmetric and predictable.
+        if (playerTransform != null && currentEnemies.Count > 0)
+        {
+            Vector3 toEnemy = currentEnemies[0].transform.position - playerTransform.position;
+            toEnemy.y = 0f;
+            if (toEnemy.sqrMagnitude > 0.01f)
+                playerTransform.rotation = Quaternion.LookRotation(toEnemy.normalized, Vector3.up);
+        }
 
         if (cameraEffects != null)
             cameraEffects.OnDuelEnter();
@@ -258,6 +269,15 @@ public class DuelManager : MonoBehaviour
     private IEnumerator HandleLossSequence()
     {
         Time.timeScale = 0f;
+
+        // Freeze player Rigidbody so gravity doesn't pull them through the ground
+        // during the WaitForSecondsRealtime pauses (which ignore timeScale).
+        if (playerRigidbody != null)
+        {
+            playerRigidbody.linearVelocity = Vector3.zero;
+            playerRigidbody.isKinematic = true;
+        }
+
         yield return new WaitForSecondsRealtime(hitStopDuration);
 
         SetTimeScale(normalTimeScale);
@@ -307,6 +327,9 @@ public class DuelManager : MonoBehaviour
 
     private void RestartLevel()
     {
+        if (playerRigidbody != null)
+            playerRigidbody.isKinematic = false;
+
         GameState.ResetForNewRun();
         SetTimeScale(normalTimeScale);
         Scene currentScene = SceneManager.GetActiveScene();
