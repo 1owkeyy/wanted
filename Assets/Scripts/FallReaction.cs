@@ -15,11 +15,20 @@ public class FallReaction : MonoBehaviour
     // sourceTransform = whoever fired the shot, used to determine fall direction (away from source).
     public void PlayFall(Transform sourceTransform, System.Action onComplete)
     {
+        // Disable all colliders immediately so dead enemies can't re-trigger duels
+        // or block the player while falling. Covers both the pivot and capsule child.
+        foreach (var col in GetComponentsInChildren<Collider>())
+            col.enabled = false;
+
         StartCoroutine(FallRoutine(sourceTransform, onComplete));
     }
 
     private IEnumerator FallRoutine(Transform sourceTransform, System.Action onComplete)
     {
+        // Disable all colliders immediately so the fallen enemy doesn't block movement or re-trigger duels
+        foreach (var col in GetComponentsInChildren<Collider>())
+            col.enabled = false;
+
         Vector3 awayFromSource = (transform.position - sourceTransform.position);
         awayFromSource.y = 0f;
         awayFromSource.Normalize();
